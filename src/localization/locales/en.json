@@ -603,6 +603,11 @@
                 }
             }
         },
+        "toggleEnableVisualization": {
+            "label": "Enable visualization",
+            "on": "Yes",
+            "off": "No"
+        },
         "toggleShowRawData": {
             "label": "Show raw telemetry data",
             "on": "On",
@@ -612,6 +617,9 @@
             "label": "Use built-in event hub",
             "on": "Yes",
             "off": "No"
+        },
+        "visualization": {
+            "label": "Data to visualize"
         },
         "error": "Failed to monitor events. {{error}}"
     },

@@ -312,6 +312,11 @@ export class ResourceKeys {
          placeHolder : "deviceEvents.interfaceDropDown.placeHolder",
       },
       noEvent : "deviceEvents.noEvent",
+      toggleEnableVisualization : {
+         label : "deviceEvents.toggleEnableVisualization.label",
+         off : "deviceEvents.toggleEnableVisualization.off",
+         on : "deviceEvents.toggleEnableVisualization.on",
+      },
       toggleShowRawData : {
          label : "deviceEvents.toggleShowRawData.label",
          off : "deviceEvents.toggleShowRawData.off",
@@ -323,6 +328,9 @@ export class ResourceKeys {
          on : "deviceEvents.toggleUseDefaultEventHub.on",
       },
       tooltip : "deviceEvents.tooltip",
+      visualization : {
+         label : "deviceEvents.visualization.label",
+      },
    };
    public static deviceIdentity = {
       authenticationType : {

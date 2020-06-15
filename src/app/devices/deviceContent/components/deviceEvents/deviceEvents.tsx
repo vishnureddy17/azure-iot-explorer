@@ -9,6 +9,7 @@ import { TextField, ITextFieldProps } from 'office-ui-fabric-react/lib/TextField
 import { Announced } from 'office-ui-fabric-react/lib/Announced';
 import { Toggle } from 'office-ui-fabric-react/lib/Toggle';
 import { RouteComponentProps } from 'react-router-dom';
+import { Line } from 'react-chartjs-2';
 import { LocalizationContextConsumer, LocalizationContextInterface } from '../../../../shared/contexts/localizationContext';
 import { ResourceKeys } from '../../../../../localization/resourceKeys';
 import { monitorEvents, stopMonitoringEvents } from '../../../../api/services/devicesService';
@@ -55,6 +56,8 @@ export interface ConfigurationSettings {
     useBuiltInEventHub: boolean;
     customEventHubName?: string;
     customEventHubConnectionString?: string;
+    enableVisualization: boolean;
+    dataToVisualize?: string;
 }
 
 export default class DeviceEventsComponent extends React.Component<DeviceEventsDataProps & DeviceEventsActionProps & RouteComponentProps, DeviceEventsState> {
@@ -66,13 +69,14 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
 
         this.state = {
             consumerGroup: DEFAULT_CONSUMER_GROUP,
+            enableVisualization: false,
             events: [],
             hasMore: false,
             monitoringData: false,
             showSystemProperties: false,
             startTime: new Date(new Date().getTime() - MILLISECONDS_IN_MINUTE), // set start time to one minute ago
             synchronizationStatus: SynchronizationStatus.initialized,
-            useBuiltInEventHub: true
+            useBuiltInEventHub: true,
         };
     }
 
@@ -96,6 +100,7 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
                         />
                         {this.renderConsumerGroup(context)}
                         {this.renderCustomEventHub(context)}
+                        {this.renderVisualization(context)}
                         {this.renderInfiniteScroll(context)}
                         {this.state.loadingAnnounced}
                     </div>
@@ -294,6 +299,78 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
     public componentDidMount() {
         this.isComponentMounted = true;
     }
+
+    private readonly renderVisualization = (context: LocalizationContextInterface) => {
+        const toggleChange = () => {
+            this.setState({
+                enableVisualization: !this.state.enableVisualization
+            });
+        };
+
+        const dataToVisualizeChange = (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
+            this.setState({
+                dataToVisualize: newValue
+            });
+        };
+
+        return (
+            <>
+                <Toggle
+                    className="toggle-button"
+                    checked={this.state.enableVisualization}
+                    ariaLabel={context.t(ResourceKeys.deviceEvents.toggleEnableVisualization.label)}
+                    label={context.t(ResourceKeys.deviceEvents.toggleEnableVisualization.label)}
+                    onText={context.t(ResourceKeys.deviceEvents.toggleEnableVisualization.on)}
+                    offText={context.t(ResourceKeys.deviceEvents.toggleEnableVisualization.off)}
+                    onChange={toggleChange}
+                />
+                {this.state.enableVisualization &&
+                    <>
+                        <TextField
+                            className={'data-to-visualize-text-field'}
+                            label={context.t(ResourceKeys.deviceEvents.visualization.label)}
+                            ariaLabel={context.t(ResourceKeys.deviceEvents.visualization.label)}
+                            underlined={true}
+                            value={this.state.dataToVisualize}
+                            onChange={dataToVisualizeChange}
+                            required={true}
+                        />
+                        {this.renderChart()}
+                    </>
+                }
+            </>
+        );
+    }
+
+    /* tslint:disable:no-magic-numbers object-literal-sort-keys*/
+    private readonly renderChart = () => {
+        const data = {
+            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+            datasets: [
+                {
+                    data: [65, 59, 80, 81, 56, 55, 40],
+                    fill: false,
+                    label: 'My First dataset',
+                    lineTension: 0.1,
+                    pointBackgroundColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: 'rgba(75,192,192,1)',
+                    pointHoverBorderColor: 'rgba(220,220,220,1)',
+                    pointHoverBorderWidth: 2,
+                    pointRadius: 1,
+                    pointHitRadius: 10,
+                }
+            ]
+        };
+
+        return (
+            <div className="chart">
+                <Line data={data} />
+            </div>
+        );
+    }
+    /* tslint:disable:no-magic-numbers object-literal-sort-keys*/
 
     private readonly renderInfiniteScroll = (context: LocalizationContextInterface) => {
         const { hasMore } = this.state;
