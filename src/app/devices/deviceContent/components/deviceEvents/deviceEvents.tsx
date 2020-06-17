@@ -3,6 +3,7 @@
  * Licensed under the MIT License
  **********************************************************/
 import * as React from 'react';
+import moment from 'moment';
 import { CommandBar, ICommandBarItemProps } from 'office-ui-fabric-react/lib/CommandBar';
 import { Spinner } from 'office-ui-fabric-react/lib/Spinner';
 import { TextField, ITextFieldProps } from 'office-ui-fabric-react/lib/TextField';
@@ -100,8 +101,7 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
                         />
                         {this.renderConsumerGroup(context)}
                         {this.renderCustomEventHub(context)}
-                        {this.renderVisualization(context)}
-                        {this.renderInfiniteScroll(context)}
+                        {this.renderEventView(context)}
                         {this.state.loadingAnnounced}
                     </div>
                 )}
@@ -300,7 +300,7 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
         this.isComponentMounted = true;
     }
 
-    private readonly renderVisualization = (context: LocalizationContextInterface) => {
+    private readonly renderEventView = (context: LocalizationContextInterface) => {
         const toggleChange = () => {
             this.setState({
                 enableVisualization: !this.state.enableVisualization
@@ -313,7 +313,7 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
             });
         };
 
-        return (
+        return(
             <>
                 <Toggle
                     className="toggle-button"
@@ -324,7 +324,9 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
                     offText={context.t(ResourceKeys.deviceEvents.toggleEnableVisualization.off)}
                     onChange={toggleChange}
                 />
-                {this.state.enableVisualization &&
+                {this.renderInfiniteScroll(context)}
+                {
+                    this.state.enableVisualization &&
                     <>
                         <TextField
                             className={'data-to-visualize-text-field'}
@@ -335,42 +337,60 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
                             onChange={dataToVisualizeChange}
                             required={true}
                         />
-                        {this.renderChart()}
+                        {this.renderChart(context)}
                     </>
                 }
             </>
         );
+
     }
 
-    /* tslint:disable:no-magic-numbers object-literal-sort-keys*/
-    private readonly renderChart = () => {
-        const data = {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-            datasets: [
-                {
-                    data: [65, 59, 80, 81, 56, 55, 40],
-                    fill: false,
-                    label: 'My First dataset',
-                    lineTension: 0.1,
-                    pointBackgroundColor: '#fff',
-                    pointBorderWidth: 1,
-                    pointHoverRadius: 5,
-                    pointHoverBackgroundColor: 'rgba(75,192,192,1)',
-                    pointHoverBorderColor: 'rgba(220,220,220,1)',
-                    pointHoverBorderWidth: 2,
-                    pointRadius: 1,
-                    pointHitRadius: 10,
+    /* tslint:disable:no-magic-numbers object-literal-sort-keys no-string-throw*/
+    private readonly renderChart = (context: LocalizationContextInterface) => {
+        const { events } = this.state;
+        const data = events.reduce(
+            (points, event: Message) => {
+                if (event.properties !== undefined && event.properties.hasOwnProperty(this.state.dataToVisualize) && points.labels.length < 50) {
+                    points.datasets[0].data.push(Number(event.properties[this.state.dataToVisualize]));
+                    points.labels.push(moment(event.enqueuedTime).toDate());
                 }
-            ]
-        };
+                return points;
+            },
+            {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    fill: false,
+                    label: this.state.dataToVisualize,
+                    lineTension: 0.1
+                }]
+            }
+        );
 
         return (
             <div className="chart">
-                <Line data={data} />
+                <Line
+                    data={data}
+                    options={{
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        legend: {
+                            display: false
+                        },
+                        scales: {
+                            xAxes: [{
+                                type: 'time',
+                                distribution: 'linear',
+                                bounds: 'data',
+                                display: true
+                            }]
+                        }
+                    }}
+                />
             </div>
         );
     }
-    /* tslint:disable:no-magic-numbers object-literal-sort-keys*/
+    /* tslint:disable:no-magic-numbers object-literal-sort-keys no-string-throw*/
 
     private readonly renderInfiniteScroll = (context: LocalizationContextInterface) => {
         const { hasMore } = this.state;
@@ -386,7 +406,7 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
                 role={this.state.events && this.state.events.length === 0 ? 'main' : 'feed'}
                 isReverse={true}
             >
-            {this.renderEvents()}
+            {!this.state.enableVisualization && this.renderEvents()}
             </InfiniteScroll>
         );
     }
