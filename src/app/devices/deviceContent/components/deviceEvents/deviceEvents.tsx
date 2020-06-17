@@ -31,6 +31,7 @@ import '../../../../css/_deviceEvents.scss';
 
 const JSON_SPACES = 2;
 const LOADING_LOCK = 50;
+const MAX_CHART_POINTS = 50;
 
 export interface DeviceEventsDataProps {
     connectionString: string;
@@ -345,25 +346,24 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
 
     }
 
-    /* tslint:disable:no-magic-numbers object-literal-sort-keys no-string-throw*/
     private readonly renderChart = (context: LocalizationContextInterface) => {
         const { events } = this.state;
         const data = events.reduce(
             (points, event: Message) => {
-                if (event.properties !== undefined && event.properties.hasOwnProperty(this.state.dataToVisualize) && points.labels.length < 50) {
+                if (event.properties !== undefined && event.properties.hasOwnProperty(this.state.dataToVisualize) && points.labels.length < MAX_CHART_POINTS) {
                     points.datasets[0].data.push(Number(event.properties[this.state.dataToVisualize]));
                     points.labels.push(moment(event.enqueuedTime).toDate());
                 }
                 return points;
             },
             {
-                labels: [],
                 datasets: [{
                     data: [],
                     fill: false,
                     label: this.state.dataToVisualize,
                     lineTension: 0.1
-                }]
+                }],
+                labels: []
             }
         );
 
@@ -372,17 +372,17 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
                 <Line
                     data={data}
                     options={{
-                        maintainAspectRatio: false,
-                        responsive: true,
                         legend: {
                             display: false
                         },
+                        maintainAspectRatio: false,
+                        responsive: true,
                         scales: {
                             xAxes: [{
-                                type: 'time',
-                                distribution: 'linear',
                                 bounds: 'data',
-                                display: true
+                                display: true,
+                                distribution: 'linear',
+                                type: 'time'
                             }]
                         }
                     }}
@@ -390,7 +390,6 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
             </div>
         );
     }
-    /* tslint:disable:no-magic-numbers object-literal-sort-keys no-string-throw*/
 
     private readonly renderInfiniteScroll = (context: LocalizationContextInterface) => {
         const { hasMore } = this.state;
