@@ -9,8 +9,9 @@ import { Spinner } from 'office-ui-fabric-react/lib/Spinner';
 import { TextField, ITextFieldProps } from 'office-ui-fabric-react/lib/TextField';
 import { Announced } from 'office-ui-fabric-react/lib/Announced';
 import { Toggle } from 'office-ui-fabric-react/lib/Toggle';
+import { Dropdown, IDropdownOption } from 'office-ui-fabric-react/lib/Dropdown';
 import { RouteComponentProps } from 'react-router-dom';
-import { Line } from 'react-chartjs-2';
+import { defaults, Line } from 'react-chartjs-2';
 import { LocalizationContextConsumer, LocalizationContextInterface } from '../../../../shared/contexts/localizationContext';
 import { ResourceKeys } from '../../../../../localization/resourceKeys';
 import { monitorEvents, stopMonitoringEvents } from '../../../../api/services/devicesService';
@@ -308,10 +309,36 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
             });
         };
 
-        const dataToVisualizeChange = (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
+        const dataToVisualizeChange = (event: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
             this.setState({
-                dataToVisualize: newValue
+                dataToVisualize: option.text
             });
+        };
+
+        const generateDropdownOptions = () => {
+            const { events } = this.state;
+            return(
+                Array.from(
+                    events.reduce(
+                        (properties: Set<string>, event: Message) => {
+                            if (event.properties !== undefined) {
+                                for (const property of Object.keys(event.properties)) {
+                                    properties.add(property);
+                                }
+                            }
+                            return properties;
+                        },
+                        new Set<string>()
+                    )
+                ).map(
+                    (property: string) => {
+                        return({
+                            key: property,
+                            text: property
+                        });
+                    }
+                )
+            );
         };
 
         return(
@@ -329,14 +356,12 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
                 {
                     this.state.enableVisualization &&
                     <>
-                        <TextField
-                            className={'data-to-visualize-text-field'}
+                        <Dropdown
+                            className="data-to-visualize-dropdown"
                             label={context.t(ResourceKeys.deviceEvents.visualization.label)}
-                            ariaLabel={context.t(ResourceKeys.deviceEvents.visualization.label)}
-                            underlined={true}
-                            value={this.state.dataToVisualize}
+                            defaultSelectedKey={this.state.dataToVisualize}
+                            options={generateDropdownOptions()}
                             onChange={dataToVisualizeChange}
-                            required={true}
                         />
                         {this.renderChart(context)}
                     </>
@@ -358,6 +383,7 @@ export default class DeviceEventsComponent extends React.Component<DeviceEventsD
             },
             {
                 datasets: [{
+                    backgroundColor: 'rgba(0, 116, 204, 1)',
                     data: [],
                     fill: false,
                     label: this.state.dataToVisualize,
