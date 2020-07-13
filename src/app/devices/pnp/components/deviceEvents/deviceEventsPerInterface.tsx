@@ -237,9 +237,12 @@ export const DeviceEventsPerInterface: React.FC = () => {
                 loader={renderLoader()}
                 isReverse={true}
             >
-            <section className="list-content">
-                {showRawEvent ? renderRawEvents() : renderEvents()}
-            </section>
+            {
+                !showVisualization &&
+                <section className="list-content">
+                    {showRawEvent ? renderRawEvents() : renderEvents()}
+                </section>
+            }
             </InfiniteScroll>
         );
     };
