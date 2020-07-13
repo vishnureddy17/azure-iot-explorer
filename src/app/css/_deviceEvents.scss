@@ -63,6 +63,14 @@
         padding-left: 24px;
     }
 
+    .choice-group{
+        padding-left: 24px;
+        .ms-ChoiceField {
+            display: inline-block;
+            margin-right: 10px;
+        }
+    }
+
     .scrollable-telemetry {
         height: calc(100vh - 400px);
         overflow-y: auto;

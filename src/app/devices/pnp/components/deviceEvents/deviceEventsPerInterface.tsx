@@ -9,7 +9,7 @@ import { Label } from 'office-ui-fabric-react/lib/components/Label';
 import { Spinner } from 'office-ui-fabric-react/lib/components/Spinner';
 import { TextField, ITextFieldProps } from 'office-ui-fabric-react/lib/components/TextField';
 import { Announced } from 'office-ui-fabric-react/lib/components/Announced';
-import { Toggle } from 'office-ui-fabric-react/lib/components/Toggle';
+import { IChoiceGroupOption, ChoiceGroup } from 'office-ui-fabric-react/lib/components/ChoiceGroup';
 import { useLocation, useHistory } from 'react-router-dom';
 import { ResourceKeys } from '../../../../../localization/resourceKeys';
 import { monitorEvents, stopMonitoringEvents } from '../../../../api/services/devicesService';
@@ -66,6 +66,7 @@ export const DeviceEventsPerInterface: React.FC = () => {
     const [ monitoringData, setMonitoringData ] = React.useState(false);
     const [ synchronizationStatus, setSynchronizationStatus ] = React.useState(SynchronizationStatus.initialized);
     const [ showRawEvent, setShowRawEvent ] = React.useState(false);
+    const [ showVisualization, setShowVisualization ] = React.useState(false);
 
     React.useEffect(() => {
         return () => {
@@ -165,23 +166,42 @@ export const DeviceEventsPerInterface: React.FC = () => {
         );
     };
 
-    const renderRawTelemetryToggle = () => {
+    const renderTelemetryViewChoiceGroup = () => {
+        const options: IChoiceGroupOption[] = [
+            { key: 'parsedTelemetry', text: 'Parsed telemetry' },
+            { key: 'rawTelemetry', text: 'Raw telemetry' },
+            { key: 'visualization', text: 'Visualization' }
+        ];
         return (
-            <Toggle
-                className="toggle-button"
-                checked={showRawEvent}
-                ariaLabel={t(ResourceKeys.deviceEvents.toggleShowRawData.label)}
-                label={t(ResourceKeys.deviceEvents.toggleShowRawData.label)}
-                onText={t(ResourceKeys.deviceEvents.toggleShowRawData.on)}
-                offText={t(ResourceKeys.deviceEvents.toggleShowRawData.off)}
-                onChange={changeToggle}
+            <ChoiceGroup
+                className="choice-group"
+                defaultSelectedKey="parsedTelemetry"
+                options={options}
+                onChange={changeChoiceGroup}
+                label="Telemetry view"
+                required={true}
             />
         );
     };
 
-    const changeToggle = () => {
-        setShowRawEvent(!showRawEvent);
+    /* tslint:disable:switch-default */
+    const changeChoiceGroup = (event: React.FormEvent<HTMLInputElement>, option: IChoiceGroupOption) => {
+        switch (option.key) {
+            case 'parsedTelemetry':
+                setShowRawEvent(false);
+                setShowVisualization(false);
+                break;
+            case 'rawTelemetry':
+                setShowRawEvent(true);
+                setShowVisualization(false);
+                break;
+            case 'visualization':
+                setShowVisualization(true);
+                break;
+            default:
+        }
     };
+    /* tslint:enable:switch-default */
 
     const stopMonitoring = async () => {
         clearTimeout(timerID);
@@ -571,7 +591,7 @@ export const DeviceEventsPerInterface: React.FC = () => {
                         disabled={monitoringData}
                         onChange={consumerGroupChange}
                     />
-                    {renderRawTelemetryToggle()}
+                    {renderTelemetryViewChoiceGroup()}
                     {renderInfiniteScroll()}
                 </>
             }
