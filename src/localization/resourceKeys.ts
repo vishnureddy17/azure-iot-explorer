@@ -308,6 +308,7 @@ export class ResourceKeys {
             label : "deviceEvents.customEventHub.name.label",
          },
       },
+      dataToVisualizeDropdownLabel : "deviceEvents.dataToVisualizeDropdownLabel",
       error : "deviceEvents.error",
       event : {
          body : "deviceEvents.event.body",
@@ -323,10 +324,11 @@ export class ResourceKeys {
          placeHolder : "deviceEvents.interfaceDropDown.placeHolder",
       },
       noEvent : "deviceEvents.noEvent",
-      toggleShowRawData : {
-         label : "deviceEvents.toggleShowRawData.label",
-         off : "deviceEvents.toggleShowRawData.off",
-         on : "deviceEvents.toggleShowRawData.on",
+      telemetryViewChoiceGroup : {
+         label : "deviceEvents.telemetryViewChoiceGroup.label",
+         parsedTelemetry : "deviceEvents.telemetryViewChoiceGroup.parsedTelemetry",
+         rawTelemetry : "deviceEvents.telemetryViewChoiceGroup.rawTelemetry",
+         visualization : "deviceEvents.telemetryViewChoiceGroup.visualization",
       },
       toggleUseDefaultEventHub : {
          label : "deviceEvents.toggleUseDefaultEventHub.label",

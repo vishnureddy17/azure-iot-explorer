@@ -4,12 +4,15 @@
  **********************************************************/
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import moment from 'moment';
+import { Line } from 'react-chartjs-2';
 import { CommandBar, ICommandBarItemProps } from 'office-ui-fabric-react/lib/components/CommandBar';
 import { Label } from 'office-ui-fabric-react/lib/components/Label';
 import { Spinner } from 'office-ui-fabric-react/lib/components/Spinner';
 import { TextField, ITextFieldProps } from 'office-ui-fabric-react/lib/components/TextField';
 import { Announced } from 'office-ui-fabric-react/lib/components/Announced';
 import { IChoiceGroupOption, ChoiceGroup } from 'office-ui-fabric-react/lib/components/ChoiceGroup';
+import { IDropdownOption, Dropdown } from 'office-ui-fabric-react/lib/components/Dropdown';
 import { useLocation, useHistory } from 'react-router-dom';
 import { ResourceKeys } from '../../../../../localization/resourceKeys';
 import { monitorEvents, stopMonitoringEvents } from '../../../../api/services/devicesService';
@@ -39,6 +42,7 @@ import '../../../../css/_deviceEvents.scss';
 
 const JSON_SPACES = 2;
 const LOADING_LOCK = 50;
+const MAX_CHART_POINTS = 50;
 const TELEMETRY_SCHEMA_PROP = MESSAGE_PROPERTIES.IOTHUB_MESSAGE_SCHEMA;
 
 export const DeviceEventsPerInterface: React.FC = () => {
@@ -61,6 +65,7 @@ export const DeviceEventsPerInterface: React.FC = () => {
     const [ events, SetEvents] = React.useState([]);
     const [ startTime, SetStartTime] = React.useState(new Date(new Date().getTime() - MILLISECONDS_IN_MINUTE));
     const [ hasMore, setHasMore ] = React.useState(false);
+    const [ dataToVisualize, setDataToVisualize ] = React.useState('');
     const [ loading, setLoading ] = React.useState(false);
     const [ loadingAnnounced, setLoadingAnnounced ] = React.useState(undefined);
     const [ monitoringData, setMonitoringData ] = React.useState(false);
@@ -167,10 +172,11 @@ export const DeviceEventsPerInterface: React.FC = () => {
     };
 
     const renderTelemetryViewChoiceGroup = () => {
+        /* make sure that these strings come from locale */
         const options: IChoiceGroupOption[] = [
-            { key: 'parsedTelemetry', text: 'Parsed telemetry' },
-            { key: 'rawTelemetry', text: 'Raw telemetry' },
-            { key: 'visualization', text: 'Visualization' }
+            { key: 'parsedTelemetry', text: t(ResourceKeys.deviceEvents.telemetryViewChoiceGroup.parsedTelemetry) },
+            { key: 'rawTelemetry', text: t(ResourceKeys.deviceEvents.telemetryViewChoiceGroup.rawTelemetry) },
+            { key: 'visualization', text: t(ResourceKeys.deviceEvents.telemetryViewChoiceGroup.visualization) }
         ];
         return (
             <ChoiceGroup
@@ -178,7 +184,7 @@ export const DeviceEventsPerInterface: React.FC = () => {
                 defaultSelectedKey="parsedTelemetry"
                 options={options}
                 onChange={changeChoiceGroup}
-                label="Telemetry view"
+                label={t(ResourceKeys.deviceEvents.telemetryViewChoiceGroup.label)}
                 required={true}
             />
         );
@@ -492,6 +498,97 @@ export const DeviceEventsPerInterface: React.FC = () => {
         );
     };
 
+    const generateDropdownOptions = () => {
+        return(
+            Array.from(
+                events.reduce<Set<string>>(
+                    // tslint:disable-next-line: cyclomatic-complexity
+                    (options: Set<string>, event: Message) => {
+                        if (event.systemProperties && event.systemProperties[TELEMETRY_SCHEMA_PROP]) {
+                            const matchingSchema = telemetrySchema.filter(schema => schema.telemetryModelDefinition.name === event.systemProperties[TELEMETRY_SCHEMA_PROP]);
+                            const telemetryModelDefinition =  matchingSchema && matchingSchema.length !== 0 && matchingSchema[0].telemetryModelDefinition;
+                            if (typeof telemetryModelDefinition.schema === 'string' && (telemetryModelDefinition.schema === 'double' ||
+                            telemetryModelDefinition.schema === 'float' ||
+                            telemetryModelDefinition.schema === 'integer' ||
+                            telemetryModelDefinition.schema === 'long')) {
+                                options.add(telemetryModelDefinition.name);
+                            }
+                        }
+                        else if (event.systemProperties) {
+                            const telemetryKeys = Object.keys(event.body);
+                            if (telemetryKeys && telemetryKeys.length !== 0) {
+                                for (const key of telemetryKeys) {
+                                    const matchingSchema = telemetrySchema.filter(schema => schema.telemetryModelDefinition.name === key);
+                                    const telemetryModelDefinition =  matchingSchema && matchingSchema.length !== 0 && matchingSchema[0].telemetryModelDefinition;
+                                    if (typeof telemetryModelDefinition.schema === 'string' && (telemetryModelDefinition.schema === 'double' ||
+                                    telemetryModelDefinition.schema === 'float' ||
+                                    telemetryModelDefinition.schema === 'integer' ||
+                                    telemetryModelDefinition.schema === 'long')) {
+                                        options.add(telemetryModelDefinition.name);
+                                    }
+                                }
+                            }
+                        }
+                        return options;
+                    },
+                    new Set<string>()
+                )
+            ).map(
+                (option: string) => {
+                    return({
+                        key: option,
+                        text: option
+                    });
+                }
+            )
+        );
+    };
+
+    const renderChart = () => {
+        const data = events.reduce(
+            (points, event: Message) => {
+                if (event.body && event.body.hasOwnProperty(dataToVisualize) && points.labels.length < MAX_CHART_POINTS) {
+                    points.datasets[0].data.push(Number(event.body[dataToVisualize]));
+                    points.labels.push(moment(event.enqueuedTime).toDate());
+                }
+                return points;
+            },
+            {
+                datasets: [{
+                    backgroundColor: 'rgba(0, 116, 204, 1)',
+                    data: [],
+                    fill: false,
+                    label: dataToVisualize,
+                    lineTension: 0.1
+                }],
+                labels: []
+            }
+        );
+
+        return (
+            <div className="chart">
+                <Line
+                    data={data}
+                    options={{
+                        legend: {
+                            display: false
+                        },
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        scales: {
+                            xAxes: [{
+                                bounds: 'data',
+                                display: true,
+                                distribution: 'linear',
+                                type: 'time'
+                            }]
+                        }
+                    }}
+                />
+            </div>
+        );
+    };
+
     const filterMessage = (message: Message) => {
         if (!message || !message.systemProperties) {
             return false;
@@ -574,6 +671,12 @@ export const DeviceEventsPerInterface: React.FC = () => {
         };
     };
 
+    const dataToVisualizeChange = (event: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
+        if (typeof option.key === 'string') {
+            setDataToVisualize(option.key);
+        }
+    };
+
     if (isLoading) {
         return <MultiLineShimmer/>;
     }
@@ -596,6 +699,18 @@ export const DeviceEventsPerInterface: React.FC = () => {
                     />
                     {renderTelemetryViewChoiceGroup()}
                     {renderInfiniteScroll()}
+                    {
+                        showVisualization &&
+                        <>
+                            <Dropdown
+                                className="data-to-visualize-dropdown"
+                                label={t(ResourceKeys.deviceEvents.dataToVisualizeDropdownLabel)}
+                                options={generateDropdownOptions()}
+                                onChange={dataToVisualizeChange}
+                            />
+                            {renderChart()}
+                        </>
+                    }
                 </>
             }
             {loadingAnnounced}

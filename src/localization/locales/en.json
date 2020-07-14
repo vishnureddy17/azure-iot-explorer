@@ -614,11 +614,14 @@
                 }
             }
         },
-        "toggleShowRawData": {
-            "label": "Show raw telemetry data",
-            "on": "On",
-            "off": "Off"
+        "telemetryViewChoiceGroup": {
+            "label": "Telemetry view",
+            "parsedTelemetry": "Parsed telemetry",
+            "rawTelemetry": "Raw telemetry",
+            "visualization": "Visualization"
+
         },
+        "dataToVisualizeDropdownLabel": "Data to visualize",
         "toggleUseDefaultEventHub": {
             "label": "Use built-in event hub",
             "on": "Yes",

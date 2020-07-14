@@ -75,4 +75,21 @@
         height: calc(100vh - 400px);
         overflow-y: auto;
     }
+
+    .chart {
+        height: calc(100vh - 600px);
+        width: calc(80vw - 50px);
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+
+    .data-to-visualize-dropdown {
+        display: grid;
+        padding-left: 24px;
+        padding-bottom: 10px;
+        @include themify($themes) {
+            color: themed('textColor');
+        }
+        width: 80%;
+    }
 }
