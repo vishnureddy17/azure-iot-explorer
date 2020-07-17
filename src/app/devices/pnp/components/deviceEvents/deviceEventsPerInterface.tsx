@@ -190,7 +190,6 @@ export const DeviceEventsPerInterface: React.FC = () => {
         );
     };
 
-    /* tslint:disable:switch-default */
     const changeChoiceGroup = (event: React.FormEvent<HTMLInputElement>, option: IChoiceGroupOption) => {
         switch (option.key) {
             case 'parsedTelemetry':
@@ -205,9 +204,9 @@ export const DeviceEventsPerInterface: React.FC = () => {
                 setShowVisualization(true);
                 break;
             default:
+                break;
         }
     };
-    /* tslint:enable:switch-default */
 
     const stopMonitoring = async () => {
         clearTimeout(timerID);
